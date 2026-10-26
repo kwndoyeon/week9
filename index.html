@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drop the Tiles</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+  />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: start center;
+      overflow: hidden;
+      background: #EBEAEA;
+    }
+
+    #screen {
+      position: relative;
+      width: 100vw;
+      aspect-ratio: 790 / 513;
+      overflow: hidden;
+      background: #EBEAEA;
+    }
+
+    #scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: 82fr 120fr 154fr 96fr 182fr 156fr;
+      width: 2257.142857px;
+      height: 1465.714286px;
+      transform-origin: top left;
+      will-change: transform;
+    }
+
+    .photo-cell {
+      position: relative;
+      min-width: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #EBEAEA;
+    }
+
+    .tile {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+      will-change: transform;
+    }
+
+    .tile img {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .drop-word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap:120px ;
+  color: #000;
+  font-family: "Pretendard", sans-serif;
+  font-size: 178pt;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.075em;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.drop-word span {
+  display: block;
+}
+
+.drop-hover-cell:hover .tile img {
+  opacity: 0;
+}
+
+.drop-hover-cell:hover .drop-word {
+  visibility: visible;
+}
+
+    .title-cell {
+      position: relative;
+      z-index: 2;
+      padding-left: 12px;
+      overflow: visible;
+      background: #EBEAEA;
+      color: #000;
+      font-family: "Pretendard", sans-serif;
+      font-size: 178pt;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.075em;
+      white-space: nowrap;
+    }
+
+    #gallery-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #EBEAEA;
+   --photo-height: 13.2vh;
+   --thumbnail-height: 13.2vh;
+}
+
+body.show-gallery #screen {
+  display: none;
+}
+
+body.show-gallery #gallery-screen {
+  display: block;
+}
+
+.gallery-wrap {
+  display: grid;
+  grid-template-rows: 20% 80%;
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-header,
+.gallery-content {
+  display: grid;
+  grid-template-columns: 7.55% minmax(0, 1fr);
+  min-width: 0;
+}
+
+.mint-box {
+  background: #59FFBA;
+}
+
+.thumbnail-row {
+  position: relative;
+  display: block;
+  min-width: 0;
+  background: #EBEAEA;
+  container-type: inline-size;
+}
+
+.thumbnail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+}
+
+.thumbnail-number {
+  position: absolute;
+  top: 1.5cqw;
+  left: 0;
+  z-index: 3;
+  color: #000;
+  font: 700 clamp(20px, 2.6cqw, 36px)/1 "Pretendard", sans-serif;
+}
+
+.thumbnail img {
+  position: absolute;
+  z-index: 1;
+  bottom: 0.9cqw;
+  left: var(--image-offset, 0cqw);
+  display: block;
+  width: auto;
+  height: var(--thumbnail-height);
+  max-width: none;
+  object-fit: contain;
+}
+
+.thumb-2 img,
+.thumb-10 img {
+  background-color: #000;
+}
+
+/* 두 번째 사진 기준 번호 위치와 사진 간격 */
+.thumb-1  { left: 5.45%;  --image-offset: 1.8cqw; }
+.thumb-2  { left: 13.56%; --image-offset: 2cqw; }
+.thumb-3  { left: 22.54%; --image-offset: 0.5cqw; }
+.thumb-4  { left: 29%; --image-offset: 0.1cqw; }
+.thumb-5  { left: 39.59%; --image-offset: 1.9cqw; }
+.thumb-6  { left: 48.54%; --image-offset: 0cqw; }
+.thumb-7  { left: 52.29%; --image-offset: 0.05cqw; }
+.thumb-8  { left: 61.3%; --image-offset: 0cqw; }
+.thumb-9  { left: 68.5%; --image-offset: 0cqw; }
+.thumb-10 { left: 83.34%; --image-offset: 3.2cqw; }
+
+.white-rail {
+  position: relative;
+  background: #fff;
+}
+
+.time-indicator {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #000;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#gallery-screen.editor-mode .time-indicator {
+  display: block;
+}
+
+.content-area {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.timeline {
+  position: absolute;
+  top: 5%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+}
+
+.timeline::before,
+.timeline::after {
+  position: absolute;
+  top: -7px;
+  width: 43px;
+  height: 17px;
+  background: #000;
+  content: "";
+}
+
+.timeline::before {
+  left: 0;
+}
+
+.timeline::after {
+  right: 0;
+}
+
+.pink-phrase {
+  position: absolute;
+  display: inline-block;
+  padding: 0.07em 0.35em;
+  background: #F9AEFF;
+  color: #000;
+  font: 450 clamp(28px, 5.1vw, 92px)/1.14 "Pretendard", sans-serif;
+  white-space: nowrap;
+}
+
+
+.phrase-click {
+  top: 17.8%;
+  left: 0;
+  display: inline-flex;
+  gap: 0.25em;
+}
+
+.phrase-tiles {
+  top: 31.7%;
+  left: 21.5%;
+}
+
+.phrase-tiles-to {
+  top: 44.9%;
+  left: 21.5%;
+}
+
+.phrase-beat {
+  top: 44.9%;
+  right: 0;
+  left: auto;
+}
+
+.phrase-drop {
+  top: 74.2%;
+  left: 50.9%;
+}
+
+/* 갤러리 위쪽 높이를 참고 이미지에 맞춤 */
+
+
+/* 사진을 조금 키우고, 번호는 사진 위에 표시 */
+.thumbnail-number {
+  z-index: 3;
+}
+
+.thumbnail img {
+  height: var(--thumbnail-height);
+  z-index: 1;
+}
+
+/* 사진을 키운 뒤에도 6번과 7번이 붙도록 조정 */
+
+
+/* 선 위에 흰 여백을 만들고 선을 조금 내림 */
+.content-area::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 5.75%;
+  background: #fff;
+  content: "";
+}
+
+.timeline {
+  top: 5.75%;
+  z-index: 1;
+}
+
+.pink-phrase {
+  z-index: 2;
+    user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.phrase-click {
+  align-items: baseline;
+}
+
+.editor-stage {
+  position: relative;
+  width: 100%;
+  height: 81vh;
+  min-height: 81vh;
+}
+
+#gallery-screen.editor-mode .content-area {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#gallery-screen.editor-mode .pink-phrase {
+  display: none;
+}
+
+#gallery-screen.editor-mode .timeline {
+  z-index: 90;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+#gallery-screen.editor-mode .thumbnail img {
+  cursor: pointer;
+}
+
+.beat-event {
+  position: absolute;
+  z-index: 2;
+  width: auto;
+  height: var(--photo-height);
+  transform: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.falling-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  display: none;
+  width: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+#gallery-screen.playback-active .timeline,
+#gallery-screen.playback-active .time-indicator {
+  visibility: hidden;
+}
+.falling-block {
+  position: absolute;
+  width: auto;
+  max-width: none;
+  will-change: top;
+}
+
+.stack-backing {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.falling-block {
+  z-index: 1;
+}
+
+.expanded-result-board {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.expanded-result-cell {
+  position: relative;
+  overflow: hidden;
+}
+
+.result-navigation {
+  display: none;
+  position: fixed;
+  z-index: 80;
+  pointer-events: none;
+}
+
+#gallery-screen.result-ready .result-navigation {
+  display: block;
+}
+
+#gallery-screen.repeat-active .result-navigation {
+  display: none;
+}
+
+.result-navigation button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  padding: 0;
+  background: #EBEAEA;
+  color: #000;
+  font: 300 29px/1 "Pretendard", sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#expand-right {
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 100%;
+  transform: none;
+}
+
+#expand-down {
+  bottom: 0;
+  left: 0;
+  width: calc(100% - 36px);
+  height: 36px;
+  transform: none;
+}
+
+.beat-event[data-file="3.png"],
+.beat-event[data-file="10.png"] {
+  background: #000;
+}
+
+#play-button,
+#reset-button,
+#repeat-button {
+  display: none;
+   width: 85px;
+  border: 1px solid #000;
+  padding: 0.5em 0.7em;
+  background: transparent;
+  color: #000;
+  font: 600 16px "Pretendard", sans-serif;
+  cursor: pointer;
+}
+
+#gallery-screen.editor-mode #play-button,
+#gallery-screen.editor-mode #reset-button,
+#gallery-screen.editor-mode #repeat-button {
+  display: inline-block;
+}
+
+#repeat-button:disabled,
+#reset-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mint-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#gallery-screen.editor-mode #play-button {
+  display: inline-block;
+}
+
+/* 재생 후 활성화된 REPEAT 버튼 */
+#gallery-screen.editor-mode:not(.repeat-active) #repeat-button:not(:disabled) {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+/* 반복 중에는 PLAY 버튼을 숨겨 STOP 버튼 하나만 표시 */
+#gallery-screen.repeat-active #play-button {
+  display: none;
+}
+
+.mint-box {
+  display: grid;
+  place-items: center;
+}
+.repeat-black-half {
+  position: absolute;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  background: #000;
+  pointer-events: none;
+}
+
+.repeat-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.original-stack {
+  position: absolute;
+  left: 0;
+  z-index: 2;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.repeat-white-half {
+  position: absolute;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  background: #fff;
+  pointer-events: none;
+}
+
+.repeat-block {
+  transform: scaleY(-1);
+  transform-origin: center center;
+}
+
+/* 검은 반사 구간에서는 가로선을 흰색으로 보여줘 */
+#gallery-screen.repeat-on-black .timeline,
+#gallery-screen.repeat-on-black .timeline::before,
+#gallery-screen.repeat-on-black .timeline::after {
+  background: #fff;
+}
+
+/* 반복 재생 중 가로선을 블록 레이어 위에 표시 */
+#gallery-screen.repeat-active .timeline {
+  z-index: 60;
+}
+  </style>
+
+</head>
+
+<body>
+  <div id="screen">
+    <div id="scene"></div>
+  </div>
+
+  <div id="gallery-screen">
+  <div class="gallery-wrap">
+    <div class="gallery-header">
+      <div class="mint-box">
+  <div class="mint-controls">
+    <button id="play-button" type="button">PLAY</button>
+    <button id="reset-button" type="button" disabled>RESET</button>
+    <button id="repeat-button" type="button" disabled>REPEAT</button>
+  </div>
+</div>
+
+  <div class="thumbnail-row">
+    <div class="thumbnail thumb-1"><span class="thumbnail-number">1</span><img src="1.png" alt=""></div>
+
+<div class="thumbnail thumb-2"><span class="thumbnail-number">2</span><img src="2.png" alt=""></div>
+<div class="thumbnail thumb-3"><span class="thumbnail-number">3</span><img src="3.png" alt=""></div>
+<div class="thumbnail thumb-4"><span class="thumbnail-number">4</span><img src="4.png" alt=""></div>
+<div class="thumbnail thumb-5"><span class="thumbnail-number">5</span><img src="5.png" alt=""></div>
+<div class="thumbnail thumb-6"><span class="thumbnail-number">6</span><img src="6.png" alt=""></div>
+<div class="thumbnail thumb-7"><span class="thumbnail-number">7</span><img src="7.png" alt=""></div>
+<div class="thumbnail thumb-8"><span class="thumbnail-number">8</span><img src="8.png" alt=""></div>
+<div class="thumbnail thumb-9"><span class="thumbnail-number">9</span><img src="9.png" alt=""></div>
+<div class="thumbnail thumb-10"><span class="thumbnail-number">10</span><img src="10.png" alt=""></div>
+      </div>
+    </div>
+
+<div class="gallery-content">
+  <div class="white-rail">
+
+  <div class="time-indicator"></div>
+</div>
+
+  <div class="content-area">
+
+  <div class="editor-stage">
+    <div class="timeline"></div>
+    <!-- 기존 분홍 글씨들을 모두 여기에 둬 -->
+    <div class="pink-phrase phrase-click">
+  <span>CLICK</span><span>TILES</span>
+</div>
+    <div class="pink-phrase phrase-tiles">TILES</div>
+    <div class="pink-phrase phrase-tiles-to">TILES TO</div>
+    <div class="pink-phrase phrase-beat">THE BEAT</div>
+    <div class="pink-phrase phrase-drop">DROP</div>
+  </div>
+  <div class="result-navigation" aria-label="결과 확장">
+    <button id="expand-right" type="button" aria-label="가로로 추가">+</button>
+    <button id="expand-down" type="button" aria-label="세로로 추가">+</button>
+  </div>
+</div>
+  </div>
+</div>
+
+  <script>
+    const screen = document.getElementById("screen");
+    const scene = document.getElementById("scene");
+    const movingLayers = [];
+
+    let designScale = 0.35;
+
+    const layerSettings = [
+      {
+        file: "1.png",
+        direction: 1,
+        speed: 500,
+        smallGapMin: -50,
+        smallGapMax: 80,
+        largeGapMin: 120,
+        largeGapMax: 200,
+        largeGapChance: 0.3
+      },
+      {
+        file: "2.png",
+        direction: -1,
+        speed: 420,
+        smallGapMin: 20,
+        smallGapMax: 80,
+        largeGapMin: 200,
+        largeGapMax: 300,
+        largeGapChance: 0.3
+      },
+      { title: "THE" },
+      {
+        file: "6.png",
+        direction: 1,
+        speed: 500,
+        smallGapMin: -15,
+        smallGapMax: 90,
+        largeGapMin: 80,
+        largeGapMax: 150,
+        largeGapChance: 0.5
+      },
+      {
+        file: "7.png",
+        direction: -1,
+        speed: 500,
+        smallGapMin: 10,
+        smallGapMax: 60,
+        largeGapMin: 100,
+        largeGapMax: 150,
+        largeGapChance: 0.5
+      },
+      {
+        file: "11.png",
+        direction: 1,
+        speed: 550,
+        smallGapMin: 10,
+        smallGapMax: 90,
+        largeGapMin: 130,
+        largeGapMax: 180,
+        largeGapChance: 0.35
+      }
+    ];
+
+    function resizeScene() {
+      designScale = 0.35 * (screen.clientWidth / 790);
+      scene.style.transform = `scale(${designScale})`;
+
+      movingLayers.forEach((layer) => {
+        if (layer.image.naturalWidth) {
+          buildLayer(layer);
+        }
+      });
+    }
+
+    function getRandomGap(layer) {
+      const useLargeGap = Math.random() < layer.largeGapChance;
+
+      const min = useLargeGap ? layer.largeGapMin : layer.smallGapMin;
+      const max = useLargeGap ? layer.largeGapMax : layer.smallGapMax;
+      const visibleGap = min + Math.random() * (max - min);
+
+      return visibleGap / designScale;
+    }
+
+    function createTile(layer, y) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+
+      const img = document.createElement("img");
+      img.src = layer.file;
+      img.alt = "";
+      img.draggable = false;
+
+      tile.appendChild(img);
+      layer.cell.appendChild(tile);
+
+      return { element: tile, y };
+    }
+
+    function buildLayer(layer) {
+      if (!layer.image.naturalWidth) return;
+
+      const width = layer.cell.clientWidth;
+      if (!width) return;
+
+      layer.cell.replaceChildren();
+
+layer.dropWords.forEach((word) => {
+  layer.cell.appendChild(word);
+});
+
+layer.tiles = [];
+
+      layer.imageHeight =
+        width * (layer.image.naturalHeight / layer.image.naturalWidth);
+
+      layer.distanceSinceSpawn = 0;
+
+      const buffer = Math.max(
+        layer.imageHeight * 2,
+        layer.cell.clientHeight * 0.35
+      );
+
+      if (layer.direction === 1) {
+        let y = 0;
+
+        while (y < layer.cell.clientHeight + buffer) {
+          layer.tiles.push(createTile(layer, y));
+          y += layer.imageHeight + getRandomGap(layer);
+        }
+      } else {
+        let y = layer.cell.clientHeight - layer.imageHeight;
+
+        while (y + layer.imageHeight > -buffer) {
+          layer.tiles.push(createTile(layer, y));
+          y -= layer.imageHeight + getRandomGap(layer);
+        }
+      }
+
+      layer.nextSpawnDistance =
+  layer.imageHeight * 0.8 + getRandomGap(layer);
+    }
+
+    layerSettings.forEach((setting) => {
+      if (setting.title) {
+        const title = document.createElement("div");
+        title.className = "title-cell";
+        title.textContent = setting.title;
+        scene.appendChild(title);
+        return;
+      }
+
+      const cell = document.createElement("div");
+      cell.className = "photo-cell";
+      scene.appendChild(cell);
+
+      const layer = {
+        file: setting.file,
+        cell,
+        direction: setting.direction,
+        speed: setting.speed,
+        smallGapMin: setting.smallGapMin,
+        smallGapMax: setting.smallGapMax,
+        largeGapMin: setting.largeGapMin,
+        largeGapMax: setting.largeGapMax,
+        largeGapChance: setting.largeGapChance,
+        image: new Image(),
+        imageHeight: 0,
+        tiles: [],
+        dropWords: [],
+        dropStep: 0
+      };
+
+      if (setting.file === "1.png") {
+  cell.classList.add("drop-hover-cell");
+
+  const word = document.createElement("div");
+  word.className = "drop-word";
+
+  ["D", "R", "O", "P"].forEach((letter) => {
+    const line = document.createElement("span");
+    line.textContent = letter;
+    word.appendChild(line);
+  });
+
+  const secondWord = word.cloneNode(true);
+  layer.dropWords = [word, secondWord];
+
+  layer.dropWords.forEach((item) => {
+    cell.appendChild(item);
+  });
+
+  // 다음 DROP은 앞 글자와 같은 간격으로 이어지게 배치
+  layer.dropStep = word.offsetHeight + 120;
+
+  cell.addEventListener("mouseenter", () => {
+    layer.dropWords.forEach((item, index) => {
+      item.dropY = index === 0 ? 0 : -layer.dropStep;
+      item.style.transform = `translate3d(0, ${item.dropY}px, 0)`;
+    });
+  });
+}
+
+      movingLayers.push(layer);
+
+      layer.image.onload = () => buildLayer(layer);
+      layer.image.src = layer.file;
+    });
+
+    resizeScene();
+    window.addEventListener("resize", resizeScene);
+
+    let previousTime = 0;
+
+    function animate(time) {
+      const deltaTime =
+        previousTime === 0
+          ? 0
+          : Math.min((time - previousTime) / 1000, 0.05);
+
+      previousTime = time;
+
+      movingLayers.forEach((layer) => {
+        if (!layer.imageHeight || layer.tiles.length === 0) return;
+
+        const distance =
+          (layer.speed * deltaTime) / designScale;
+
+          if (layer.dropWords.length && layer.cell.matches(":hover")) {
+  layer.dropWords.forEach((word) => {
+    word.dropY += distance;
+  });
+
+  layer.dropWords.forEach((word) => {
+    if (word.dropY > layer.cell.clientHeight) {
+      const topY = Math.min(
+        ...layer.dropWords.map((item) => item.dropY)
+      );
+
+      word.dropY = topY - layer.dropStep;
+    }
+
+    word.style.transform =
+      `translate3d(0, ${word.dropY}px, 0)`;
+  });
+}
+
+        layer.tiles.forEach((tile) => {
+          tile.y += layer.direction * distance;
+        });
+
+        layer.distanceSinceSpawn += distance;
+
+        while (layer.distanceSinceSpawn >= layer.nextSpawnDistance) {
+          layer.distanceSinceSpawn -= layer.nextSpawnDistance;
+
+          const newY =
+            layer.direction === 1
+              ? layer.distanceSinceSpawn
+              : layer.cell.clientHeight -
+                layer.imageHeight -
+                layer.distanceSinceSpawn;
+
+          layer.tiles.push(createTile(layer, newY));
+
+          layer.nextSpawnDistance =
+            layer.imageHeight + getRandomGap(layer);
+        }
+
+        layer.tiles = layer.tiles.filter((tile) => {
+          const isOffscreen =
+            layer.direction === 1
+              ? tile.y >= layer.cell.clientHeight
+              : tile.y + layer.imageHeight <= 0;
+
+          if (isOffscreen) tile.element.remove();
+          return !isOffscreen;
+        });
+
+        layer.tiles.forEach((tile) => {
+          tile.element.style.transform =
+            `translate3d(0, ${tile.y}px, 0)`;
+        });
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+    
+   function alignClickTiles() {
+  const stage = document.querySelector(".editor-stage");
+  const clickLine = document.querySelector(".phrase-click");
+  const clickWord = clickLine?.querySelector("span:first-child");
+  const tilesLine = document.querySelector(".phrase-tiles");
+  const tilesToLine = document.querySelector(".phrase-tiles-to");
+  const beatLine = document.querySelector(".phrase-beat");
+
+  if (
+    !stage ||
+    !clickLine ||
+    !clickWord ||
+    !tilesLine ||
+    !tilesToLine ||
+    !beatLine ||
+    clickLine.getClientRects().length === 0
+  ) return;
+
+  const clickStyle = getComputedStyle(clickLine);
+  const tilesStyle = getComputedStyle(tilesLine);
+
+  const targetX =
+    tilesLine.getBoundingClientRect().left +
+    parseFloat(tilesStyle.paddingLeft);
+
+  const clickStartX =
+    clickLine.getBoundingClientRect().left +
+    parseFloat(clickStyle.paddingLeft);
+
+  const gap =
+    targetX -
+    clickStartX -
+    clickWord.getBoundingClientRect().width;
+
+  clickLine.style.gap = `${Math.max(0, gap)}px`;
+
+  const stageTop = stage.getBoundingClientRect().top;
+  const overlap = 1;
+
+  tilesLine.style.top =
+    `${clickLine.getBoundingClientRect().bottom - stageTop - overlap}px`;
+
+  tilesToLine.style.top =
+    `${tilesLine.getBoundingClientRect().bottom - stageTop - overlap}px`;
+
+  beatLine.style.top = tilesToLine.style.top;
+}
+
+window.addEventListener("resize", alignClickTiles);
+document.fonts.ready.then(alignClickTiles);
+
+(() => {
+  const gallery = document.getElementById("gallery-screen");
+  const stage = document.querySelector(".editor-stage");
+  const scrollArea = document.querySelector(".content-area");
+  const timeline = document.querySelector(".timeline");
+  const thumbnailRow = document.querySelector(".thumbnail-row");
+  const playButton = document.getElementById("play-button");
+  const resetButton = document.getElementById("reset-button");
+  const repeatButton = document.getElementById("repeat-button");
+  const resultNavigation = document.querySelector(".result-navigation");
+  const expandRightButton = document.getElementById("expand-right");
+  const expandDownButton = document.getElementById("expand-down");
+  const whiteRail = document.querySelector(".white-rail");
+const timeIndicator = document.querySelector(".time-indicator");
+
+  if (!gallery || !stage || !scrollArea || !timeline || !thumbnailRow || !playButton || !resetButton || !repeatButton || !resultNavigation || !expandRightButton || !expandDownButton) {
+  return;
+}
+
+  const fallingLayer = document.createElement("div");
+fallingLayer.className = "falling-layer";
+stage.appendChild(fallingLayer);
+
+function fitFallingLayer() {
+  fallingLayer.style.left = "0px";
+  fallingLayer.style.top = "0px";
+  fallingLayer.style.width = `${stage.clientWidth}px`;
+  fallingLayer.style.height = `${stage.clientHeight}px`;
+}
+
+function positionResultNavigation() {
+  const rect = scrollArea.getBoundingClientRect();
+  resultNavigation.style.left = `${rect.left}px`;
+  resultNavigation.style.top = `${rect.top}px`;
+  resultNavigation.style.width = `${rect.width}px`;
+  resultNavigation.style.height = `${rect.height}px`;
+}
+
+function showScoreAgain() {
+  fallingLayer.replaceChildren();
+  fallingLayer.style.display = "none";
+
+  beatEvents.forEach((item) => {
+    item.element.style.visibility = "visible";
+  });
+}
+
+window.addEventListener("resize", () => {
+  fitFallingLayer();
+  positionResultNavigation();
+  if (gallery.classList.contains("result-ready")) {
+    renderExpandedResult();
+  }
+});
+window.addEventListener("scroll", positionResultNavigation, true);
+
+  // 100px = 1초. 사진 사이의 간격과 재생 시간에 같이 적용돼.
+  const pixelsPerSecond = 150;
+
+  // .content-area::before의 흰 여백 높이(5.75%)와 맞춘 값
+  const whiteGapRatio = 0.0575;
+
+  const beatEvents = [];
+  const timerIds = [];
+  const playingAudios = [];
+  const previewAudios = [];
+  let lastPlayedEvents = [];
+let lastLandingTopByEvent = new Map();
+  let resultRows = 1;
+  let resultColumns = 1;
+  let expandedLayout = null;
+
+  let playheadY = 0;
+  let lastPhotoFile = null;
+
+  let lastPhotoClickTime = null;
+  let lastPhotoEventY = 0;
+  let isDragging = false;
+  let isPlaying = false;
+  let isRepeating = false;
+  let animationId = 0;
+  let timeIndicatorAnimationId = 0;
+
+  function grayAreaTop() {
+    return scrollArea.clientHeight * whiteGapRatio;
+  }
+
+  function extendStage(requiredY) {
+  // 반복 화면의 검은 배경은 이미 필요한 높이로 만들어져 있어.
+  // 반복 중 stage가 더 커지면 그 아래로 흰 여백이 생기므로 확장하지 않아.
+  if (isRepeating) return;
+
+  const visibleHeight = scrollArea.clientHeight || window.innerHeight;
+  const neededHeight = Math.max(
+    visibleHeight,
+    requiredY + visibleHeight * 0.25
+  );
+
+  if (neededHeight > stage.clientHeight) {
+    stage.style.height = `${neededHeight}px`;
+  }
+}
+
+  function updateTimeIndicator(scoreY = playheadY) {
+  const lineRect = timeline.getBoundingClientRect();
+  const railRect = whiteRail.getBoundingClientRect();
+  const lineCenterY = lineRect.top + lineRect.height / 2;
+
+  timeIndicator.style.top =
+    `${lineCenterY - railRect.top + (scoreY - playheadY)}px`;
+}
+
+function alignTimeIndicatorToLine() {
+  const lineRect = timeline.getBoundingClientRect();
+  const railRect = whiteRail.getBoundingClientRect();
+
+  timeIndicator.style.top =
+    `${lineRect.top + lineRect.height / 2 - railRect.top}px`;
+}
+
+function animateTimeIndicator() {
+  if (
+    isDragging ||
+    isPlaying ||
+    lastPhotoClickTime === null
+  ) {
+    timeIndicatorAnimationId = 0;
+    return;
+  }
+
+  const elapsed = (performance.now() - lastPhotoClickTime) / 1000;
+  const currentY = lastPhotoEventY + elapsed * pixelsPerSecond;
+
+  updateTimeIndicator(currentY);
+  timeIndicatorAnimationId = requestAnimationFrame(animateTimeIndicator);
+}
+
+function startTimeIndicator() {
+  if (!timeIndicatorAnimationId) {
+    timeIndicatorAnimationId = requestAnimationFrame(animateTimeIndicator);
+  }
+}
+
+function alignSixAndSeven() {
+  const row = document.querySelector(".thumbnail-row");
+  const image6 = document.querySelector(".thumb-6 img");
+  const image7 = document.querySelector(".thumb-7 img");
+
+  if (
+    !row ||
+    !image6 ||
+    !image7 ||
+    !row.clientWidth ||
+    !image6.naturalWidth ||
+    !image7.naturalWidth
+  ) {
+    return;
+  }
+
+  const rowRect = row.getBoundingClientRect();
+  const image6Rect = image6.getBoundingClientRect();
+  const image7Rect = image7.getBoundingClientRect();
+  const thumb7Rect = image7.parentElement.getBoundingClientRect();
+
+  const gap = image6Rect.right - image7Rect.left;
+  const newLeft =
+    ((thumb7Rect.left - rowRect.left + gap) / rowRect.width) * 100;
+
+  image7.parentElement.style.left = `${newLeft}%`;
+}
+
+
+window.addEventListener("resize", alignSixAndSeven);
+
+  function setPlayhead(y) {
+    const minY = grayAreaTop();
+    const lineHeight = timeline.offsetHeight || 2;
+    const targetY = Math.max(minY, y);
+
+    // 아래로 더 이동할 공간이 필요하면 회색 작업 영역을 늘려
+    extendStage(targetY + lineHeight);
+
+    const maxY = Math.max(minY, stage.clientHeight - lineHeight);
+    playheadY = Math.min(targetY, maxY);
+    timeline.style.top = `${playheadY}px`;
+    updateTimeIndicator(playheadY);
+
+  }
+
+  function resetClickSequence() {
+    lastPhotoClickTime = null;
+    lastPhotoEventY = playheadY;
+    lastPhotoFile = null;
+  }
+
+  function playScrubEvents(fromY, toY) {
+  if (fromY === toY) return;
+
+  const movingDown = toY > fromY;
+
+  const crossedEvents = beatEvents
+    .filter((item) =>
+      movingDown
+        ? item.y > fromY && item.y <= toY
+        : item.y < fromY && item.y >= toY
+    )
+    .sort((a, b) =>
+      movingDown ? a.y - b.y : b.y - a.y
+    );
+
+  crossedEvents.forEach((item) => {
+    const audio = new Audio(item.audioFile);
+    audio.play().catch((error) => {
+      console.warn(`${item.audioFile} 미리 듣기를 재생하지 못했어.`, error);
+    });
+  });
+}
+
+  function enterEditorMode() {
+    gallery.classList.add("editor-mode");
+
+    const lineTop = timeline.getBoundingClientRect().top;
+    const stageTop = stage.getBoundingClientRect().top;
+    setPlayhead(lineTop - stageTop);
+    resetClickSequence();
+  }
+
+  // 표지 클릭 → 썸네일 화면, 그 화면에서 한 번 더 클릭 → 편집 화면
+  document.addEventListener("click", () => {
+    if (!document.body.classList.contains("show-gallery")) {
+      document.body.classList.add("show-gallery");
+
+requestAnimationFrame(() => {
+  alignClickTiles();
+  alignSixAndSeven();
+});
+      return;
+    }
+
+    if (!gallery.classList.contains("editor-mode")) {
+      enterEditorMode();
+    }
+  });
+
+  // 검은 선을 회색 작업 영역 안에서만 위아래로 이동
+  timeline.addEventListener("pointerdown", (event) => {
+    if (!gallery.classList.contains("editor-mode") || isPlaying) return;
+
+    isDragging = true;
+    timeline.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+
+  timeline.addEventListener("pointermove", (event) => {
+    if (!isDragging) return;
+
+    const previousY = playheadY;
+const stageTop = stage.getBoundingClientRect().top;
+
+setPlayhead(event.clientY - stageTop);
+playScrubEvents(previousY, playheadY);
+
+    const areaRect = scrollArea.getBoundingClientRect();
+
+    if (event.clientY > areaRect.bottom - 28) {
+      scrollArea.scrollTop += 14;
+    } else if (event.clientY < areaRect.top + 28) {
+      scrollArea.scrollTop -= 14;
+    }
+  });
+
+  function stopDragging() {
+    if (!isDragging) return;
+    isDragging = false;
+
+    // 선을 새 위치에 놓으면 그 위치부터 새 클릭 간격을 계산
+    resetClickSequence();
+  }
+
+  timeline.addEventListener("pointerup", stopDragging);
+  timeline.addEventListener("pointercancel", stopDragging);
+  timeline.addEventListener("lostpointercapture", stopDragging);
+
+  // 사진을 누른 간격을 세로 위치 간격으로 반영
+  document.querySelectorAll(".thumbnail img").forEach((thumbnailImage) => {
+    thumbnailImage.addEventListener("click", (event) => {
+      if (!gallery.classList.contains("editor-mode")) return;
+
+      event.stopPropagation();
+
+      gallery.classList.remove("result-ready", "repeat-active", "repeat-on-black");
+      resultRows = 1;
+      resultColumns = 1;
+      expandedLayout = null;
+      fallingLayer.replaceChildren();
+      fallingLayer.style.display = "none";
+      repeatButton.disabled = true;
+
+      const file = thumbnailImage.getAttribute("src");
+      const imageRect = thumbnailImage.getBoundingClientRect();
+      const rowRect = thumbnailRow.getBoundingClientRect();
+
+      if (!rowRect.width) return;
+
+      const now = performance.now();
+let eventY;
+
+if (file !== lastPhotoFile) {
+  // 다른 사진을 처음 누르면 현재 검은 선 위치에서 시작
+  lastPhotoFile = file;
+  eventY = playheadY;
+} else if (lastPhotoClickTime === null) {
+  eventY = playheadY;
+} else {
+  // 같은 사진을 이어 누르면 클릭 간격만큼 아래에 배치
+  const clickGapSeconds = (now - lastPhotoClickTime) / 1000;
+  eventY =
+    lastPhotoEventY +
+    clickGapSeconds * pixelsPerSecond;
+}
+
+lastPhotoClickTime = now;
+lastPhotoEventY = eventY;
+updateTimeIndicator(eventY);
+startTimeIndicator();
+
+      const leftPercent =
+        ((imageRect.left - rowRect.left) / rowRect.width) * 100;
+
+      const lineHeight = timeline.offsetHeight || 2;
+      extendStage(eventY + lineHeight + imageRect.height);
+
+      const beatImage = document.createElement("img");
+      beatImage.className = "beat-event";
+      beatImage.src = file;
+      beatImage.alt = "";
+      beatImage.draggable = false;
+      beatImage.dataset.file = file;
+      beatImage.style.left = `${leftPercent}%`;
+
+      // 사진의 윗면을 검은 선 바로 아래에 붙임
+      beatImage.style.top = `${eventY + lineHeight}px`;
+      beatImage.style.zIndex = String(2 + beatEvents.length);
+
+      stage.appendChild(beatImage);
+
+      beatEvents.push({
+  y: eventY,
+  file,
+  leftPercent,
+  width: imageRect.width,
+  height: imageRect.height,
+    element: beatImage,
+  audioFile: file.replace(/\.png$/i, ".wav")
+});
+resetButton.disabled = false;
+const previewAudio = new Audio(file.replace(/\.png$/i, ".wav"));
+previewAudios.push(previewAudio);
+const removePreviewAudio = () => {
+  const index = previewAudios.indexOf(previewAudio);
+  if (index !== -1) previewAudios.splice(index, 1);
+};
+previewAudio.addEventListener("ended", removePreviewAudio, { once: true });
+previewAudio.addEventListener("error", removePreviewAudio, { once: true });
+
+previewAudio.play().catch((error) => {
+  removePreviewAudio();
+  console.warn("미리 듣기 소리를 재생하지 못했어.", error);
+});
+
+    // 새 사진이 생긴 위치가 화면 안에 오도록 부드럽게 스크롤
+const targetScrollTop = Math.max(
+  0,
+  eventY + lineHeight - scrollArea.clientHeight * 0.35
+);
+
+scrollArea.scrollTo({
+  top: targetScrollTop,
+  behavior: "smooth"
+}); 
+    });
+  });
+
+  function stopPlayback(resetLine = true, completed = false) {
+  isPlaying = false;
+  isRepeating = false;
+  gallery.classList.remove(
+    "playback-active",
+    "repeat-active",
+    "repeat-on-black"
+  );
+  repeatButton.textContent = "REPEAT";
+
+    timerIds.forEach((id) => clearTimeout(id));
+    timerIds.length = 0;
+
+    playingAudios.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    playingAudios.length = 0;
+
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = 0;
+    }
+
+    playButton.textContent = "PLAY";
+
+  if (resetLine) {
+  const oldScrollBehavior = scrollArea.style.scrollBehavior;
+  scrollArea.style.scrollBehavior = "auto";
+  scrollArea.scrollTop = 0;
+
+  const initialY = grayAreaTop();
+  setPlayhead(initialY);
+  resetClickSequence();
+
+  if (timeIndicatorAnimationId) {
+    cancelAnimationFrame(timeIndicatorAnimationId);
+    timeIndicatorAnimationId = 0;
+  }
+
+  requestAnimationFrame(() => {
+    updateTimeIndicator(playheadY);
+    scrollArea.style.scrollBehavior = oldScrollBehavior;
+  });
+}
+    repeatButton.disabled = lastPlayedEvents.length === 0;
+
+    if (completed && lastPlayedEvents.length > 0) {
+      gallery.classList.add("result-ready");
+      positionResultNavigation();
+    }
+  }
+
+  function resetComposition() {
+    if (isPlaying) stopPlayback(false);
+
+    previewAudios.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    previewAudios.length = 0;
+
+    beatEvents.forEach((item) => item.element.remove());
+    beatEvents.length = 0;
+    lastPlayedEvents = [];
+    lastLandingTopByEvent = new Map();
+    resultRows = 1;
+    resultColumns = 1;
+    expandedLayout = null;
+
+    fallingLayer.replaceChildren();
+    fallingLayer.style.display = "none";
+    stage.style.removeProperty("height");
+    stage.style.removeProperty("min-height");
+    gallery.classList.remove(
+      "result-ready",
+      "playback-active",
+      "repeat-active",
+      "repeat-on-black"
+    );
+
+    playButton.textContent = "PLAY";
+    repeatButton.textContent = "REPEAT";
+    repeatButton.disabled = true;
+    resetButton.disabled = true;
+
+    const previousScrollBehavior = scrollArea.style.scrollBehavior;
+    scrollArea.style.scrollBehavior = "auto";
+    scrollArea.scrollTop = 0;
+    setPlayhead(grayAreaTop());
+    resetClickSequence();
+
+    if (timeIndicatorAnimationId) {
+      cancelAnimationFrame(timeIndicatorAnimationId);
+      timeIndicatorAnimationId = 0;
+    }
+
+    requestAnimationFrame(() => {
+      updateTimeIndicator(playheadY);
+      scrollArea.style.scrollBehavior = previousScrollBehavior;
+    });
+  }
+
+  resetButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    resetComposition();
+  });
+
+function createStackBacking(
+  events,
+  landingTopByEvent,
+  fillColor = "#000000",
+  canvasTop = 0,
+  canvasHeight = fallingLayer.clientHeight
+) {
+  const canvas = document.createElement("canvas");
+  canvas.className = "stack-backing";
+
+  const width = Math.ceil(fallingLayer.clientWidth);
+  const height = Math.max(1, Math.ceil(canvasHeight));
+
+  canvas.width = width;
+  canvas.height = height;
+
+  canvas.style.inset = "auto";
+  canvas.style.left = "0px";
+  canvas.style.top = `${canvasTop}px`;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  if (events.length === 0 || width === 0) {
+    return canvas;
+  }
+
+  const context = canvas.getContext("2d");
+  const padding = 24;
+
+  const boxes = events
+    .map((item) => {
+      const x = (item.leftPercent / 100) * width;
+      const y = landingTopByEvent.get(item) - canvasTop;
+
+      return {
+        left: Math.max(0, x - padding),
+        top: Math.max(0, y - padding),
+        right: Math.min(width, x + item.width + padding),
+        bottom: Math.min(height, y + item.height + padding)
+      };
+    })
+    .filter((box) => box.right > box.left && box.bottom > box.top);
+
+  if (boxes.length === 0) {
+    return canvas;
+  }
+
+  const rows = [];
+
+  for (let y = 0; y < height; y++) {
+    const activeBoxes = boxes.filter(
+      (box) => box.top < y + 1 && box.bottom > y
+    );
+
+    if (activeBoxes.length === 0) continue;
+
+    rows.push({
+      y,
+      left: Math.min(...activeBoxes.map((box) => box.left)),
+      right: Math.max(...activeBoxes.map((box) => box.right))
+    });
+  }
+
+  context.fillStyle = fillColor;
+
+  rows.forEach((row, index) => {
+    context.fillRect(row.left, row.y, row.right - row.left, 1);
+
+    const nextRow = rows[index + 1];
+    if (!nextRow || nextRow.y <= row.y + 1) return;
+
+    const gap = nextRow.y - row.y;
+
+    for (let y = row.y + 1; y < nextRow.y; y++) {
+      const progress = (y - row.y) / gap;
+      const left = row.left + (nextRow.left - row.left) * progress;
+      const right = row.right + (nextRow.right - row.right) * progress;
+
+      context.fillRect(left, y, right - left, 1);
+    }
+  });
+
+  return canvas;
+}
+
+  function getExpandedCompositionBounds() {
+    const sourceWidth = Math.max(1, stage.clientWidth);
+    const sourceHeight = Math.max(1, stage.clientHeight);
+    const padding = 24;
+    const boxes = lastPlayedEvents.map((item) => {
+      const x = (item.leftPercent / 100) * sourceWidth;
+      const y = lastLandingTopByEvent.get(item);
+
+      return {
+        left: Math.max(0, x - padding),
+        top: Math.max(0, y - padding),
+        right: Math.min(sourceWidth, x + item.width + padding),
+        bottom: Math.min(sourceHeight, y + item.height + padding)
+      };
+    });
+
+    return {
+      left: Math.min(...boxes.map((box) => box.left)),
+      top: Math.min(...boxes.map((box) => box.top)),
+      right: Math.max(...boxes.map((box) => box.right)),
+      bottom: Math.max(...boxes.map((box) => box.bottom))
+    };
+  }
+
+  function createCompactStackBacking(events, bounds, width, height) {
+    const canvas = document.createElement("canvas");
+    canvas.className = "stack-backing";
+    canvas.width = Math.max(1, Math.ceil(width));
+    canvas.height = Math.max(1, Math.ceil(height));
+    canvas.style.inset = "auto";
+    canvas.style.left = "0px";
+    canvas.style.top = "0px";
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+
+    const context = canvas.getContext("2d");
+    const padding = 24;
+    const boxes = events.map((item) => {
+      const x = (item.leftPercent / 100) * stage.clientWidth;
+      const y = lastLandingTopByEvent.get(item);
+
+      return {
+        left: Math.max(0, x - padding - bounds.left),
+        top: Math.max(0, y - padding - bounds.top),
+        right: Math.min(canvas.width, x + item.width + padding - bounds.left),
+        bottom: Math.min(canvas.height, y + item.height + padding - bounds.top)
+      };
+    });
+
+    const rows = [];
+    for (let y = 0; y < canvas.height; y++) {
+      const activeBoxes = boxes.filter(
+        (box) => box.top < y + 1 && box.bottom > y
+      );
+      if (activeBoxes.length === 0) continue;
+
+      rows.push({
+        y,
+        left: Math.min(...activeBoxes.map((box) => box.left)),
+        right: Math.max(...activeBoxes.map((box) => box.right))
+      });
+    }
+
+    const context2d = context;
+    context2d.fillStyle = "#000000";
+    rows.forEach((row, index) => {
+      context2d.fillRect(row.left, row.y, row.right - row.left, 1);
+      const nextRow = rows[index + 1];
+      if (!nextRow || nextRow.y <= row.y + 1) return;
+
+      const gap = nextRow.y - row.y;
+      for (let y = row.y + 1; y < nextRow.y; y++) {
+        const progress = (y - row.y) / gap;
+        const left = row.left + (nextRow.left - row.left) * progress;
+        const right = row.right + (nextRow.right - row.right) * progress;
+        context2d.fillRect(left, y, right - left, 1);
+      }
+    });
+
+    return canvas;
+  }
+
+  function renderExpandedResult() {
+    if (lastPlayedEvents.length === 0) return;
+
+    fitFallingLayer();
+    fallingLayer.replaceChildren();
+    fallingLayer.style.display = "block";
+
+    const bounds = getExpandedCompositionBounds();
+    const sourceWidth = Math.max(1, stage.clientWidth);
+    const cellWidth = Math.max(1, Math.ceil(bounds.right - bounds.left));
+    const cellHeight = Math.max(1, Math.ceil(bounds.bottom - bounds.top));
+    const availableWidth = Math.max(1, scrollArea.clientWidth - 36);
+    const availableHeight = Math.max(1, scrollArea.clientHeight - 36);
+    const boardWidth = cellWidth * resultColumns;
+    const boardHeight = cellHeight * resultRows;
+    const anchorLeft = bounds.left;
+    const anchorTop = bounds.top;
+    const scale = Math.min(
+      1,
+      Math.max(1, availableWidth - anchorLeft) / boardWidth,
+      Math.max(1, availableHeight - anchorTop) / boardHeight
+    );
+
+    expandedLayout = {
+      bounds,
+      sourceWidth,
+      cellWidth,
+      cellHeight,
+      scale,
+      anchorLeft,
+      anchorTop,
+      rows: resultRows,
+      columns: resultColumns
+    };
+
+    const board = document.createElement("div");
+    board.className = "expanded-result-board";
+    board.style.width = `${boardWidth}px`;
+    board.style.height = `${boardHeight}px`;
+    board.style.left = `${anchorLeft}px`;
+    board.style.top = `${anchorTop}px`;
+    board.style.gridTemplateColumns = `repeat(${resultColumns}, ${cellWidth}px)`;
+    board.style.gridTemplateRows = `repeat(${resultRows}, ${cellHeight}px)`;
+    board.style.transform = `scale(${scale})`;
+    board.style.gap = "0px";
+
+    const orderedEvents = [...lastPlayedEvents].sort((a, b) => a.y - b.y);
+
+    for (let row = 0; row < resultRows; row++) {
+      for (let column = 0; column < resultColumns; column++) {
+        const cell = document.createElement("div");
+        cell.className = "expanded-result-cell";
+        cell.style.width = `${cellWidth}px`;
+        cell.style.height = `${cellHeight}px`;
+
+        const backing = createCompactStackBacking(
+          orderedEvents,
+          bounds,
+          cellWidth,
+          cellHeight
+        );
+        backing.style.opacity = "1";
+        backing.style.transition = "none";
+        cell.appendChild(backing);
+
+        orderedEvents.forEach((item, index) => {
+          const block = new Image();
+          block.className = "falling-block";
+          block.src = item.file;
+          block.alt = "";
+          block.draggable = false;
+          const x = (item.leftPercent / 100) * sourceWidth;
+          block.style.left = `${x - bounds.left}px`;
+          block.style.top = `${lastLandingTopByEvent.get(item) - bounds.top}px`;
+          block.style.width = `${item.width}px`;
+          block.style.height = `${item.height}px`;
+          block.style.zIndex = String(index + 1);
+          block.style.transition = "none";
+          cell.appendChild(block);
+        });
+
+        board.appendChild(cell);
+      }
+    }
+
+    fallingLayer.appendChild(board);
+    scrollArea.scrollTop = 0;
+  }
+
+  function playExpandedResult() {
+    if (lastPlayedEvents.length === 0) return;
+
+    isPlaying = true;
+    isRepeating = false;
+    gallery.classList.remove("repeat-active", "repeat-on-black");
+    gallery.classList.add("playback-active");
+    playButton.textContent = "STOP";
+    repeatButton.disabled = lastPlayedEvents.length === 0;
+
+    const events = [...lastPlayedEvents].sort((a, b) => a.y - b.y);
+    const firstY = events[0].y;
+    const lastY = events[events.length - 1].y;
+    const lastOffset = Math.max(0, ((lastY - firstY) / pixelsPerSecond) * 1000);
+    const cycleDuration = lastOffset + 650;
+
+    function playAudio(item) {
+      const audio = new Audio(item.audioFile);
+      playingAudios.push(audio);
+
+      const removeAudio = () => {
+        const index = playingAudios.indexOf(audio);
+        if (index !== -1) playingAudios.splice(index, 1);
+      };
+
+      audio.addEventListener("ended", removeAudio, { once: true });
+      audio.addEventListener("error", removeAudio, { once: true });
+      audio.play().catch((error) => {
+        removeAudio();
+        console.warn(`${item.audioFile} 재생을 확인해줘.`, error);
+      });
+    }
+
+    let lastScheduledDelay = 0;
+
+    for (let row = 0; row < resultRows; row++) {
+      for (let column = 0; column < resultColumns; column++) {
+        events.forEach((item) => {
+          const delay =
+            row * cycleDuration +
+            Math.max(0, ((item.y - firstY) / pixelsPerSecond) * 1000);
+
+          lastScheduledDelay = Math.max(lastScheduledDelay, delay);
+          const timerId = setTimeout(() => {
+            if (isPlaying) playAudio(item);
+          }, delay);
+          timerIds.push(timerId);
+        });
+      }
+    }
+
+    const finishTimer = setTimeout(() => {
+      if (isPlaying) stopPlayback(false, true);
+    }, lastScheduledDelay + 1500);
+    timerIds.push(finishTimer);
+  }
+
+
+
+  function startPlayback() {
+    if (beatEvents.length === 0) return;
+    resultRows = 1;
+    resultColumns = 1;
+    expandedLayout = null;
+    gallery.classList.remove("result-ready");
+    repeatButton.disabled = true;
+gallery.classList.remove("repeat-active");
+
+    isPlaying = true;
+    gallery.classList.add("playback-active");
+    playButton.textContent = "STOP";
+
+    const startY = grayAreaTop();
+    const lastEventY = Math.max(...beatEvents.map((item) => item.y));
+    const lastEventTime =
+      Math.max(0, (lastEventY - startY) / pixelsPerSecond);
+    const stopAfter = lastEventTime + 1.5;
+
+   fallingLayer.replaceChildren();
+fallingLayer.style.display = "block";
+fitFallingLayer();
+beatEvents.forEach((item) => {
+  item.element.style.display = "none";
+});
+    const orderedEvents = [...beatEvents].sort((a, b) => a.y - b.y);
+   
+const firstEvent = orderedEvents[0];
+const lastEvent = orderedEvents[orderedEvents.length - 1];
+const landingTopByEvent = new Map();
+
+const edgePadding = 24;
+const stackTop = grayAreaTop() + edgePadding;
+const stackBottom = fallingLayer.clientHeight - edgePadding;
+const timeSpan = lastEvent.y - firstEvent.y;
+const availableGap = stackBottom - firstEvent.height - stackTop;
+
+const gapScale =
+  timeSpan > 0
+    ? Math.max(0, availableGap / timeSpan)
+    : 1;
+
+orderedEvents.forEach((item) => {
+  const distanceFromLast = lastEvent.y - item.y;
+
+  landingTopByEvent.set(
+    item,
+    stackTop + distanceFromLast * gapScale
+  );
+});
+lastPlayedEvents = orderedEvents.slice();
+lastLandingTopByEvent = new Map(landingTopByEvent);
+
+    const stackBacking = createStackBacking(
+      orderedEvents,
+      landingTopByEvent
+    );
+
+   fallingLayer.appendChild(stackBacking);
+
+// 재생 시작 전에 악보 화면을 맨 아래로 이동
+const previousScrollBehavior = scrollArea.style.scrollBehavior;
+scrollArea.style.scrollBehavior = "auto";
+
+scrollArea.scrollTop = Math.max(
+  0,
+  scrollArea.scrollHeight - scrollArea.clientHeight
+);
+
+requestAnimationFrame(() => {
+  scrollArea.style.scrollBehavior = previousScrollBehavior;
+});
+
+// 악보가 화면보다 길 때만 맨 아래로 부드럽게 스크롤
+
+
+
+
+    orderedEvents.forEach((item) => {
+      const delay = Math.max(
+        0,
+        ((item.y - startY) / pixelsPerSecond) * 1000
+      );
+
+      const timerId = setTimeout(() => {
+        if (!isPlaying) return;
+
+        const dropBlock = new Image();
+dropBlock.className = "falling-block";
+dropBlock.src = item.file;
+dropBlock.alt = "";
+dropBlock.draggable = false;
+dropBlock.style.left = `${item.leftPercent}%`;
+dropBlock.style.width = `${item.width}px`;
+dropBlock.style.height = `${item.height}px`;
+
+const landingTop = landingTopByEvent.get(item);
+
+dropBlock.style.top = `${scrollArea.scrollTop - item.height}px`;
+fallingLayer.appendChild(dropBlock);
+
+requestAnimationFrame(() => {
+  dropBlock.style.transition =
+     "top 0.8s ease-out";
+  dropBlock.style.top = `${landingTop}px`;
+});
+
+const audio = new Audio(item.audioFile);
+playingAudios.push(audio);
+audio.play().catch((error) => {
+  console.warn(`${item.audioFile} 재생을 확인해줘.`, error);
+});
+
+      }, delay);
+
+      timerIds.push(timerId);
+    });
+
+    const lastDropDelay = Math.max(
+      ...orderedEvents.map((item) =>
+        Math.max(0, ((item.y - startY) / pixelsPerSecond) * 1000)
+      )
+    );
+
+    const backingRevealTimer = setTimeout(() => {
+      stackBacking.style.opacity = "1";
+    }, lastDropDelay + 850);
+
+    timerIds.push(backingRevealTimer);
+
+    const startedAt = performance.now();
+
+
+    function moveLineDuringPlayback(now) {
+  if (!isPlaying) return;
+
+  const elapsed = (now - startedAt) / 1000;
+
+  if (elapsed >= stopAfter) {
+    stopPlayback(true, true);
+    return;
+  }
+
+  animationId = requestAnimationFrame(moveLineDuringPlayback);
+}
+
+animationId = requestAnimationFrame(moveLineDuringPlayback);
+  }
+
+  playButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    if (isPlaying) {
+  stopPlayback(isRepeating ? false : true);
+    } else if (resultRows > 1 || resultColumns > 1) {
+      playExpandedResult();
+} else {
+      startPlayback();
+    }
+  });
+
+  function addResultCopy(axis) {
+    if (!gallery.classList.contains("result-ready")) return;
+
+    // 재생 중 추가를 눌러도 기존 타이머와 소리가 남지 않게 정리한 뒤,
+    // 늘어난 전체 구성을 처음부터 다시 재생해.
+    if (isPlaying) {
+      stopPlayback(false);
+    }
+
+    if (axis === "horizontal") {
+      resultColumns += 1;
+    } else {
+      resultRows += 1;
+    }
+
+    renderExpandedResult();
+    playExpandedResult();
+  }
+
+  expandRightButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    addResultCopy("horizontal");
+  });
+
+  expandDownButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    addResultCopy("vertical");
+  });
+
+  repeatButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+
+  // 반복 중 버튼을 누르면 소리와 선만 멈춤. 블록과 사진은 남아 있음.
+  if (isRepeating) {
+    stopPlayback(false, true);
+    return;
+  }
+
+  if (
+    repeatButton.disabled ||
+    lastPlayedEvents.length === 0
+  ) {
+    return;
+  }
+
+  // 확장된 블럭의 소리가 재생 중이어도 REPEAT를 누르면
+  // 현재 재생을 멈추고 반사 반복으로 바로 전환해.
+  if (isPlaying) {
+    stopPlayback(false);
+  }
+
+  gallery.classList.remove("result-ready");
+
+  // 전에 만든 반사 구간이 있으면 반복을 새로 시작할 때만 정리
+  fallingLayer
+    .querySelectorAll(".repeat-generated")
+    .forEach((element) => element.remove());
+
+  const repeatLandingTopByEvent = new Map();
+  let events;
+
+  if (expandedLayout) {
+    events = [];
+    const baseEvents = [...lastPlayedEvents].sort((a, b) => a.y - b.y);
+    const {
+      bounds,
+      sourceWidth,
+      cellWidth,
+      cellHeight,
+      scale,
+      anchorLeft,
+      anchorTop,
+      rows,
+      columns
+    } = expandedLayout;
+
+    for (let row = 0; row < rows; row++) {
+      for (let column = 0; column < columns; column++) {
+        baseEvents.forEach((item) => {
+          const sourceX = (item.leftPercent / 100) * sourceWidth;
+          const localX = sourceX - bounds.left;
+          const localY = lastLandingTopByEvent.get(item) - bounds.top;
+          const expandedItem = {
+            ...item,
+            leftPercent:
+              ((anchorLeft + (column * cellWidth + localX) * scale) /
+                Math.max(1, stage.clientWidth)) *
+              100,
+            width: item.width * scale,
+            height: item.height * scale
+          };
+          const expandedTop =
+            anchorTop + (row * cellHeight + localY) * scale;
+
+          events.push(expandedItem);
+          repeatLandingTopByEvent.set(expandedItem, expandedTop);
+        });
+      }
+    }
+
+    events.sort(
+      (a, b) => repeatLandingTopByEvent.get(a) - repeatLandingTopByEvent.get(b)
+    );
+  } else {
+    events = [...lastPlayedEvents].sort((a, b) => a.y - b.y);
+    events.forEach((item) => {
+      repeatLandingTopByEvent.set(item, lastLandingTopByEvent.get(item));
+    });
+  }
+
+  const originalTop = Math.min(
+    ...events.map((item) => repeatLandingTopByEvent.get(item))
+  );
+
+  const originalBottom = Math.max(
+    ...events.map(
+      (item) => repeatLandingTopByEvent.get(item) + item.height
+    )
+  );
+
+const stackHeight = Math.max(1, originalBottom - originalTop);
+const padding = 24;
+const bandTop = originalBottom + padding;
+const bottomMargin = grayAreaTop();
+const contentTop = bandTop + padding;
+
+const panelBottom =
+  bandTop + stackHeight + padding * 2 + bottomMargin;
+
+// 편집 영역보다 검은 배경이 짧아지지 않게 함
+const stageHeight = Math.max(panelBottom, scrollArea.clientHeight);
+
+stage.style.height = `${stageHeight}px`;
+stage.style.minHeight = `${stageHeight}px`;
+fitFallingLayer();
+
+const bandHeight = fallingLayer.clientHeight - bandTop;
+
+
+  // 원본 블록 바로 밑에 검은 배경을 한 번만 만듦
+  const blackBand = document.createElement("div");
+  blackBand.className = "repeat-black-half repeat-generated";
+  blackBand.style.top = `${bandTop}px`;
+  blackBand.style.height = `${bandHeight}px`;
+  fallingLayer.appendChild(blackBand);
+
+  const mirroredTops = new Map();
+
+  events.forEach((item) => {
+    const originalLocalTop =
+      repeatLandingTopByEvent.get(item) - originalTop;
+
+    const mirroredLocalTop =
+      stackHeight - (originalLocalTop + item.height);
+
+    mirroredTops.set(item, contentTop + mirroredLocalTop);
+  });
+
+  // 사진 바깥을 감싸는 블록만 흰색으로 만듦
+  const whiteBacking = createStackBacking(
+    events,
+    mirroredTops,
+    "#ffffff",
+    bandTop,
+    bandHeight
+  );
+
+  whiteBacking.classList.add("repeat-generated");
+  whiteBacking.style.opacity = "1";
+  whiteBacking.style.transition = "none";
+  fallingLayer.appendChild(whiteBacking);
+
+  // 사진은 원본 색을 유지하고, 위치와 세로 방향만 반사
+  events.forEach((item) => {
+    const mirroredImage = new Image();
+
+    mirroredImage.className =
+      "falling-block repeat-block repeat-generated";
+    mirroredImage.src = item.file;
+    mirroredImage.alt = "";
+    mirroredImage.draggable = false;
+    mirroredImage.style.left = `${item.leftPercent}%`;
+    mirroredImage.style.width = `${item.width}px`;
+    mirroredImage.style.height = `${item.height}px`;
+    mirroredImage.style.top = `${mirroredTops.get(item)}px`;
+
+    fallingLayer.appendChild(mirroredImage);
+  });
+
+  isPlaying = true;
+  isRepeating = true;
+  gallery.classList.remove("playback-active");
+  gallery.classList.add("repeat-active");
+  playButton.textContent = "PLAY";
+repeatButton.textContent = "STOP";
+
+  function scheduleRepeat(callback, delay) {
+    let timerId = setTimeout(() => {
+      const index = timerIds.indexOf(timerId);
+      if (index !== -1) timerIds.splice(index, 1);
+
+      if (!isPlaying || !isRepeating) return;
+      callback();
+    }, delay);
+
+    timerIds.push(timerId);
+  }
+
+  function playEventAudio(item) {
+    const audio = new Audio(item.audioFile);
+    playingAudios.push(audio);
+
+    const removeAudio = () => {
+      const index = playingAudios.indexOf(audio);
+      if (index !== -1) playingAudios.splice(index, 1);
+    };
+
+    audio.addEventListener("ended", removeAudio, { once: true });
+    audio.addEventListener("error", removeAudio, { once: true });
+
+    audio.play().catch((error) => {
+      removeAudio();
+      console.warn(`${item.audioFile} 재생을 확인해줘.`, error);
+    });
+  }
+
+    const soundMarkers = [];
+
+  events.forEach((item) => {
+    soundMarkers.push({
+      y: repeatLandingTopByEvent.get(item) + item.height / 2,
+      item
+    });
+
+    soundMarkers.push({
+      y: mirroredTops.get(item) + item.height / 2,
+      item
+    });
+  });
+
+  const sweepTop = Math.max(
+    grayAreaTop(),
+    originalTop - padding
+  );
+
+ const sweepBottom = panelBottom;
+
+  function startSweep(direction) {
+    if (!isPlaying || !isRepeating) return;
+
+    const fromY = direction > 0 ? sweepTop : sweepBottom;
+    const toY = direction > 0 ? sweepBottom : sweepTop;
+
+    const markers = soundMarkers
+      .filter((marker) =>
+        marker.y >= sweepTop && marker.y <= sweepBottom
+      )
+      .sort((a, b) =>
+        direction > 0 ? a.y - b.y : b.y - a.y
+      );
+
+    let markerIndex = 0;
+    const startedAt = performance.now();
+    const totalDistance = Math.abs(toY - fromY);
+
+    setPlayhead(fromY);
+
+    function moveLine(now) {
+      if (!isPlaying || !isRepeating) {
+        animationId = 0;
+        return;
+      }
+
+      const elapsedSeconds = (now - startedAt) / 1000;
+      const distance = Math.min(
+        elapsedSeconds * pixelsPerSecond,
+        totalDistance
+      );
+
+      const currentY = fromY + direction * distance;
+
+      setPlayhead(currentY);
+
+
+      // 반사 구간에서는 가로선을 흰색으로 표시
+      gallery.classList.toggle(
+        "repeat-on-black",
+        currentY >= bandTop &&
+          currentY <= bandTop + bandHeight
+      );
+
+      // 선이 사진 위치를 지날 때 해당 소리 재생
+      while (markerIndex < markers.length) {
+        const marker = markers[markerIndex];
+        const reached =
+          direction > 0
+            ? marker.y <= currentY
+            : marker.y >= currentY;
+
+        if (!reached) break;
+
+        playEventAudio(marker.item);
+        markerIndex += 1;
+      }
+
+     const targetScrollTop =
+  currentY - scrollArea.clientHeight * 0.5;
+
+const maxScrollTop =
+  scrollArea.scrollHeight - scrollArea.clientHeight;
+
+scrollArea.scrollTop = Math.max(
+  0,
+  Math.min(targetScrollTop, maxScrollTop)
+);
+
+      if (distance >= totalDistance) {
+        animationId = 0;
+        startSweep(-direction);
+        return;
+      }
+
+      animationId = requestAnimationFrame(moveLine);
+    }
+
+    animationId = requestAnimationFrame(moveLine);
+  }
+
+  // 원본 구간부터 재생하고, 반사 구간과 번갈아 계속 반복
+  startSweep(-1);
+});
+})();
+</script>
+
+</body>
+</html>
